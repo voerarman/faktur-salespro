@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Aplikasi Faktur Penjualan</title>
     
-    <!-- PWA Meta Tags (DITAMBAHKAN) -->
+    <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e3a8a">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -350,7 +350,7 @@
 
     <script>
         // ==========================================
-        // REGISTRASI SERVICE WORKER UNTUK PWA (DITAMBAHKAN)
+        // REGISTRASI SERVICE WORKER UNTUK PWA
         // ==========================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -1109,9 +1109,12 @@
                                 <p class="font-black text-base text-slate-800">Rp ${formatRupiah(inv.grand_total)}</p>
                                 <p class="text-[10px] font-semibold text-slate-500">${inv.items.length} Barang</p>
                             </div>
-                            <button onclick="cetakPDF('${inv.no_faktur}')" class="text-[11px] bg-slate-800 text-white px-3 py-1.5 rounded-lg flex items-center gap-1 active:scale-95 font-bold">
-                                <i class="ph ph-printer text-sm"></i> PDF
+                            
+                            <!-- TOMBOL PDF DIUBAH WARNANYA DI SINI -->
+                            <button onclick="cetakPDF('${inv.no_faktur}')" class="text-[11px] bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg flex items-center gap-1 active:scale-95 font-bold shadow-sm transition-colors">
+                                <i class="ph-fill ph-file-pdf text-sm"></i> PDF
                             </button>
+                            
                         </div>
                     </div>
                     <button onclick="hapusRiwayat('${inv.no_faktur}')" class="absolute top-4 right-4 h-8 w-8 bg-red-50 text-red-500 rounded-full flex items-center justify-center hover:bg-red-100 active:scale-95">
@@ -1131,10 +1134,21 @@
             showToast('Riwayat dihapus', 'success');
         }
 
-        // --- SISTEM CETAK DIRECT SAVE MENGGUNAKAN DIV TETAP DI DOM TAPI UI DISEMBUNYIKAN (ANTI-BLANK ANDROID) ---
+        // --- SISTEM CETAK PDF DENGAN PROMPT NAMA FILE ---
         function cetakPDF(noFaktur) {
             const inv = invoiceHistory.find(i => i.no_faktur === noFaktur);
             if (!inv) return showToast('Faktur tidak ditemukan!', 'error');
+
+            // --- PROMPT UNTUK UBAH NAMA FILE PDF ---
+            let namaTokoBersih = inv.toko.replace(/[^a-zA-Z0-9]/g, '_');
+            let defaultName = `Faktur_${inv.no_faktur}_${namaTokoBersih}`;
+            let customName = prompt("Masukkan nama file untuk PDF:", defaultName);
+            
+            // Jika user klik "Cancel" / "Batal" di kotak dialog
+            if (customName === null) return; 
+            
+            // Tentukan nama akhir dokumen
+            let documentTitle = customName.trim() === "" ? defaultName : customName.trim();
 
             const dateObj = new Date(inv.tanggal);
             const dateStr = dateObj.toLocaleDateString('en-US', { day:'2-digit', month:'2-digit', year:'numeric' });
@@ -1374,12 +1388,12 @@
 </div>
             `;
 
-            // Pakai Blob URL agar URL di header/footer print = "blob:..." bukan base64 panjang
+            // MENGGUNAKAN documentTitle HASIL INPUTAN USER
             const fullHtml = `<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Faktur_${inv.no_faktur}</title>
+<title>${documentTitle}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -1427,7 +1441,7 @@ ${templateHtml}
             }, 800);
         }
 
-                // --- HOME STATS ---
+        // --- HOME STATS ---
         function updateHomeStats() {
             const todayStr = new Date().toLocaleDateString('id-ID');
             const todayInv = invoiceHistory.filter(i => new Date(i.tanggal).toLocaleDateString('id-ID') === todayStr);
